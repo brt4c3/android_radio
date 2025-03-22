@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">RadioWaveProject</string>
+    <string name="play">Play</string>
+    <string name="stop">Stop</string>
+    <string name="am">AM</string>
+    <string name="fm">FM</string>
+    <string name="debug_text">Debug Output</string>
 </resources>
