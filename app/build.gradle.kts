@@ -62,6 +62,8 @@ dependencies {
 
     // Jetpack Compose BOM (Bill of Materials)
     implementation(platform(libs.androidx.compose.bom))
+    // Jetpack Compose Navigation dependency
+    implementation("androidx.navigation:navigation-compose:2.5.3")
 
     // Compose dependencies
     implementation(libs.androidx.compose.ui)
@@ -76,8 +78,13 @@ dependencies {
     implementation(libs.androidx.legacy.support.v13)
     implementation(libs.material)
     implementation(libs.androidx.compose.material3)
-    implementation("androidx.compose.material3:material3-window-size-class:1.3.1")
-    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0-alpha10")
+    implementation(libs.androidx.material3.window.size.class1)
+    implementation(libs.androidx.material3.adaptive.navigation.suite)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media)
+    // Material Icons Extended dependency for Icons.Default.*
+    implementation("androidx.compose.material:material-icons-extended:1.4.3")
 
 
 

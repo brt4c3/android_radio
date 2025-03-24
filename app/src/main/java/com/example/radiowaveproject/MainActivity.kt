@@ -1,136 +1,243 @@
 package com.example.radiowaveproject
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Radio
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.example.radiowaveproject.RadioConstants.ACTION_START
+import com.example.radiowaveproject.RadioConstants.ACTION_STOP
+import com.example.radiowaveproject.RadioConstants.EXTRA_STATION_NAME
+import com.example.radiowaveproject.RadioConstants.LOG_BROADCAST
+import com.example.radiowaveproject.RadioConstants.radioStations
 import com.example.radiowaveproject.ui.theme.RadioWaveProjectTheme
+import com.example.radiowaveproject.NetworkPerformancePanel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
+            // Shared log list for broadcast messages from the services.
+            val logs = remember { mutableStateListOf("📋 Ready") }
+            LogReceiver(logs)
+
             RadioWaveProjectTheme {
-                RadioWaveScreen()
+                val navController = rememberNavController()
+                MainScaffold(navController, logs)
             }
         }
     }
 }
 
+/**
+ * MainScaffold contains a bottom navigation bar that lets users switch
+ * between the Radio Service and Network Performance screens.
+ */
 @Composable
-fun RadioWaveScreen() {
-    var isPlaying by remember { mutableStateOf(false) }
-    var isFM by remember { mutableStateOf(true) }
-    var frequency by remember { mutableStateOf(89.1f) }
-    var debugText by remember { mutableStateOf("Ready") }
+fun MainScaffold(navController: NavHostController, logs: MutableList<String>) {
+    Scaffold(
+        bottomBar = { BottomNavigationBar(navController) }
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = "radio",
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable("radio") { RadioServiceScreen(logs) }
+            composable("network") { NetworkPerformanceScreen() }
+        }
+    }
+}
+
+/**
+ * BottomNavigationBar shows two items:
+ * • Radio – navigates to the screen that controls the radio service.
+ * • Network – navigates to the screen that displays network performance.
+ */
+@Composable
+fun BottomNavigationBar(navController: NavHostController) {
+    val items = listOf("radio", "network")
+    NavigationBar {
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry?.destination?.route
+        items.forEach { screen ->
+            NavigationBarItem(
+                icon = {
+                    when (screen) {
+                        "radio" -> Icon(Icons.Filled.Radio, contentDescription = "Radio")
+                        "network" -> Icon(Icons.Filled.Wifi, contentDescription = "Network")
+                    }
+                },
+                label = { Text(screen.replaceFirstChar { it.uppercase() }) },
+                selected = currentRoute == screen,
+                onClick = {
+                    navController.navigate(screen) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+        }
+    }
+}
+
+/**
+ * RadioServiceScreen wraps the RadioWaveScreen composable that contains:
+ * • A station selector and dropdown.
+ * • Buttons that invoke the RadioService (using startForegroundService).
+ */
+@Composable
+fun RadioServiceScreen(logs: MutableList<String>) {
+    RadioWaveScreen(logs)
+}
+
+/**
+ * NetworkPerformanceScreen wraps the NetworkPerformancePanel (from NetworkPerformance.kt)
+ * in a centered container so that its sine wave animation and other info are clearly visible.
+ */
+@Composable
+fun NetworkPerformanceScreen() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        NetworkPerformancePanel(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        )
+    }
+}
+
+/**
+ * LogReceiver listens for broadcast log messages from services (e.g. RadioService)
+ * and appends them to the shared log list.
+ */
+@Composable
+fun LogReceiver(logs: MutableList<String>) {
     val context = LocalContext.current
+    DisposableEffect(Unit) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                intent?.getStringExtra("log_message")?.let { logs.add("🔊 $it") }
+            }
+        }
+        val filter = IntentFilter(LOG_BROADCAST)
+        context.registerReceiver(receiver, filter)
+        onDispose {
+            context.unregisterReceiver(receiver)
+        }
+    }
+}
+
+/**
+ * RadioWaveScreen displays a UI for selecting a radio station and starting/stopping the RadioService.
+ */
+@Composable
+fun RadioWaveScreen(logs: MutableList<String>) {
+    val context = LocalContext.current
+    var isPlaying by remember { mutableStateOf(false) }
+    var selectedStation by remember { mutableStateOf(radioStations.keys.first()) }
+    var expanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(24.dp)
     ) {
-        // Debug Output
-        Text(
-            text = debugText,
-            fontSize = 14.sp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.Gray)
-                .padding(8.dp),
-            color = Color.White
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Frequency Selector
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            Button(onClick = { frequency -= 0.1f }) {
-                Text("-")
+        // Station selection dropdown
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
+                Text("🎧 Select Station: $selectedStation")
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            BasicTextField(
-                value = "%.1f".format(frequency),
-                onValueChange = { /* Read-only */ },
-                modifier = Modifier
-                    .background(Color.LightGray)
-                    .padding(8.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = { frequency += 0.1f }) {
-                Text("+")
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                radioStations.forEach { (name, _) ->
+                    DropdownMenuItem(
+                        onClick = {
+                            selectedStation = name
+                            logs.add("📻 Station selected: $name")
+                            expanded = false
+                        },
+                        text = { Text(name) }
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // AM/FM Toggle
-        Button(
-            onClick = {
-                isFM = !isFM
-                debugText = "Mode: ${if (isFM) "FM" else "AM"}"
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(if (isFM) "FM" else "AM")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Play/Stop Button
+        // Play/Stop button that starts or stops the RadioService
         Button(
             onClick = {
                 isPlaying = !isPlaying
                 if (isPlaying) {
-                    startRadioService(context, frequency, isFM)
+                    logs.add("▶ Starting: $selectedStation")
+                    ContextCompat.startForegroundService(
+                        context,
+                        Intent(context, RadioService::class.java).apply {
+                            action = ACTION_START
+                            putExtra(EXTRA_STATION_NAME, selectedStation)
+                        }
+                    )
                 } else {
-                    stopRadioService(context)
+                    logs.add("⏹ Stopping: $selectedStation")
+                    context.startService(
+                        Intent(context, RadioService::class.java).apply {
+                            action = ACTION_STOP
+                        }
+                    )
                 }
-                debugText = "Playing: $isPlaying\nMode: ${if (isFM) "FM" else "AM"}\nFrequency: $frequency MHz"
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if (isPlaying) "Stop" else "Play")
+            Text(if (isPlaying) "⏹ Stop" else "▶ Play")
         }
-    }
-}
 
-// Start Radio Service
-fun startRadioService(context: Context, frequency: Float, isFM: Boolean) {
-    val serviceIntent = Intent(context, RadioService::class.java).apply {
-        action = RadioService.ACTION_START
-        putExtra(RadioService.EXTRA_FREQUENCY, frequency)
-        putExtra(RadioService.EXTRA_IS_FM, isFM)
-    }
-    context.startService(serviceIntent)
-}
 
-// Stop Radio Service
-fun stopRadioService(context: Context) {
-    val serviceIntent = Intent(context, RadioService::class.java).apply {
-        action = RadioService.ACTION_STOP
-    }
-    context.startService(serviceIntent)
-}
+        Spacer(modifier = Modifier.height(24.dp))
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewRadioWaveScreen() {
-    RadioWaveProjectTheme {
-        RadioWaveScreen()
+        // Display logs for feedback
+        Text(text = logs.joinToString("\n"))
     }
 }
