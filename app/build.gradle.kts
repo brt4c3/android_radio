@@ -86,6 +86,8 @@ dependencies {
     // Material Icons Extended dependency for Icons.Default.*
     implementation("androidx.compose.material:material-icons-extended:1.4.3")
 
+    // DNS
+    implementation("dnsjava:dnsjava:3.5.2")
 
 
     // Testing

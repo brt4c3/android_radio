@@ -1,6 +1,9 @@
 package com.example.radiowaveproject
 
-import android.app.*
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
@@ -15,6 +18,12 @@ import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.InetAddress
+
+import org.xbill.DNS.Lookup
+import org.xbill.DNS.Record
+import org.xbill.DNS.Type
+
+
 
 class RadioService : Service() {
 
@@ -61,7 +70,7 @@ class RadioService : Service() {
             RadioConstants.ACTION_STOP -> {
                 log("Stopping radio service.")
                 stopStream()
-                stopForeground(true)
+                //stopForeground(true)//deprecated
                 stopSelf()
             }
         }
@@ -168,12 +177,15 @@ class RadioService : Service() {
      */
     private fun resolveDns(host: String): String {
         return try {
-            val process = ProcessBuilder("dig", host).start()
-            val reader = BufferedReader(InputStreamReader(process.inputStream))
-            val result = reader.readText()
-            result.lines().filter { it.contains("ANSWER") || it.contains("IN") }.joinToString("\n")
+            val lookup = Lookup(host, Type.A)
+            val records: Array<Record>? = lookup.run()
+            if (lookup.result == Lookup.SUCCESSFUL && records != null) {
+                records.joinToString("\n") { it.rdataToString() }
+            } else {
+                "DNS lookup failed for $host: ${lookup.errorString}"
+            }
         } catch (e: Exception) {
-            "DNS lookup failed"
+            "DNS lookup failed: ${e.message}"
         }
     }
 

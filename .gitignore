@@ -1,15 +1,57 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+# macOS
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Local configuration
 local.properties
+
+# IDE - Android Studio & IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# IntelliJ specific subfolders (optional but useful)
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# VS Code
+.vscode/
+
+# Kotlin
+.kotlin/
+
+# Native build / CMake
+.externalNativeBuild/
+.cxx/
+*.cxx/
+
+# Log files
+*.log
+*.hprof
+
+# Android Studio captures
+captures/
+
+# APKs and outputs
+*.apk
+*.ap_
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+
+# Crashlytics/Fabric
+crashlytics-build.properties
+
+# Exclude default test directories
+**/src/androidTest/
+**/src/test/

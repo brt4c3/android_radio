@@ -51,6 +51,11 @@ import com.example.radiowaveproject.RadioConstants.LOG_BROADCAST
 import com.example.radiowaveproject.RadioConstants.radioStations
 import com.example.radiowaveproject.ui.theme.RadioWaveProjectTheme
 import com.example.radiowaveproject.NetworkPerformancePanel
+import com.example.radiowaveproject.LogWindow
+import androidx.compose.material3.CircularProgressIndicator
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -180,15 +185,22 @@ fun RadioWaveScreen(logs: MutableList<String>) {
     var isPlaying by remember { mutableStateOf(false) }
     var selectedStation by remember { mutableStateOf(radioStations.keys.first()) }
     var expanded by remember { mutableStateOf(false) }
+    // Controls whether the play/stop button can be clicked.
+    var isClickable by remember { mutableStateOf(true) }
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp)
     ) {
-        // Station selection dropdown
+        // Station selection dropdown; disabled when playing.
         Box(modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = { if (!isPlaying) expanded = true },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isPlaying
+            ) {
                 Text("🎧 Select Station: $selectedStation")
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -207,37 +219,52 @@ fun RadioWaveScreen(logs: MutableList<String>) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Play/Stop button that starts or stops the RadioService
+        // Play/Stop button that starts or stops the RadioService.
         Button(
             onClick = {
-                isPlaying = !isPlaying
-                if (isPlaying) {
-                    logs.add("▶ Starting: $selectedStation")
-                    ContextCompat.startForegroundService(
-                        context,
-                        Intent(context, RadioService::class.java).apply {
-                            action = ACTION_START
-                            putExtra(EXTRA_STATION_NAME, selectedStation)
-                        }
-                    )
-                } else {
-                    logs.add("⏹ Stopping: $selectedStation")
-                    context.startService(
-                        Intent(context, RadioService::class.java).apply {
-                            action = ACTION_STOP
-                        }
-                    )
+                if (isClickable) {
+                    isClickable = false
+                    coroutineScope.launch {
+                        delay(500)
+                        isClickable = true
+                    }
+                    isPlaying = !isPlaying
+                    if (isPlaying) {
+                        logs.add("▶ Starting: $selectedStation")
+                        ContextCompat.startForegroundService(
+                            context,
+                            Intent(context, RadioService::class.java).apply {
+                                action = ACTION_START
+                                putExtra(EXTRA_STATION_NAME, selectedStation)
+                            }
+                        )
+                    } else {
+                        logs.add("⏹ Stopping: $selectedStation")
+                        context.startService(
+                            Intent(context, RadioService::class.java).apply {
+                                action = ACTION_STOP
+                            }
+                        )
+                    }
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isClickable
         ) {
             Text(if (isPlaying) "⏹ Stop" else "▶ Play")
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(24.dp))
+        // Spinner animation displayed while playing.
+        if (isPlaying) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
-        // Display logs for feedback
+        // Display logs for feedback.
         Text(text = logs.joinToString("\n"))
     }
 }
