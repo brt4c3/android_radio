@@ -1,8 +1,9 @@
 # macOS
 .DS_Store
 
-#vscode
-.vscode
+#ignore more
+.vscode/
+.idea/
 
 # Gradle
 .gradle/
