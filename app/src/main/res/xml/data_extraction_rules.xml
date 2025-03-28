@@ -1,5 +1,4 @@
-<data-extraction-rules>
-    <cloud-backup allow="true">
-        <include path="/data/data/com.example.radiowaveproject/files/" />
-    </cloud-backup>
-</data-extraction-rules>
+<?xml version="1.0" encoding="utf-8" ?>
+<full-backup-content>
+    <include domain="file" path="files/" />
+</full-backup-content>
