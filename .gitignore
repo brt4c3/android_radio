@@ -4,7 +4,7 @@
 #ignore more
 ./.vscode/
 ./.idea/
-!**/*.apk
+!*.apk
 
 # Gradle
 .gradle/
