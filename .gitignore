@@ -2,8 +2,8 @@
 .DS_Store
 
 #ignore more
-.vscode/
-.idea/
+./.vscode/
+./.idea/
 
 # Gradle
 .gradle/
