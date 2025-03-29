@@ -1,5 +1,7 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+>
 
     <!-- Required permissions -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -7,20 +9,35 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_BLOBS_ACROSS_USERS"
-        tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.ACCESS_BLOBS_ACROSS_USERS"
+        tools:ignore="ProtectedPermissions"
+    />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
+        tools:ignore="CoarseFineLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+
 
     <!-- Optional hardware features -->
-    <uses-feature android:name="android.hardware.radio" android:required="false"/>
-    <uses-feature android:name="android.hardware.audio.low_latency"/>
-    <uses-feature android:name="android.hardware.audio.output"/>
-    <uses-feature android:name="android.hardware.audio.pro"/>
-    <uses-feature android:name="android.hardware.ram.normal"/>
-    <uses-feature android:name="android.hardware.location.network"/>
-    <uses-feature android:name="android.hardware.location.gps"
-        android:required="false" />
-    <uses-feature android:name="android.hardware.location"/>
-    <uses-feature android:name="android.hardware.ram.low"/>
+    <uses-feature
+        android:name="android.hardware.radio"
+        android:required="false"
+    />
+    <uses-feature android:name="android.hardware.audio.low_latency" />
+    <uses-feature android:name="android.hardware.audio.output" />
+    <uses-feature android:name="android.hardware.audio.pro" />
+    <uses-feature android:name="android.hardware.ram.normal" />
+    <uses-feature android:name="android.hardware.location.network" />
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false"
+    />
+    <uses-feature android:name="android.hardware.location" />
+    <uses-feature android:name="android.hardware.ram.low" />
 
     <application
         android:allowBackup="true"
@@ -31,14 +48,16 @@
         android:icon="@mipmap/ic_launcher"
         android:label="radiowaveproject"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true">
+        android:supportsRtl="true"
+    >
 
         <!-- Main activity declaration -->
         <activity
             android:name="com.example.radiowaveproject.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.RadioWaveProject"
-            tools:ignore="MissingClass">
+            tools:ignore="MissingClass"
+        >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -46,8 +65,6 @@
         </activity>
 
         <!-- Register RadioService -->
-        <service
-            android:name=".RadioService"
-            android:exported="false"/>
+        <service android:name=".RadioService" android:exported="false" />
     </application>
 </manifest>

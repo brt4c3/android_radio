@@ -1,4 +1,4 @@
-package com.example.radiowaveproject
+package com.example.radiowaveproject.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
